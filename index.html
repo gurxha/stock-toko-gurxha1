@@ -124,8 +124,11 @@
                     </div>`;
                 renderModals();
             }
-            lucide.createIcons();
-        };
+ if (window.lucide) {
+    lucide.createIcons();
+}
+            };
+
 
         const renderHeader = () => `
             <header class="bg-white border-b border-slate-100 p-5 sticky top-0 z-30">
@@ -271,102 +274,47 @@
                 </button>
             </nav>`;
 
-        const renderModals = () => {
-            const container = document.getElementById('modal-container');
-            container.innerHTML = `
-                <!-- Modal In -->
-                <div id="modal-in" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex items-end sm:items-center justify-center">
-                    <div class="bg-white rounded-t-[3rem] w-full max-w-md p-6 pb-12 overflow-y-auto max-h-[90vh]">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-xl font-black text-emerald-600 uppercase">Stok Masuk</h2>
-                            <button onclick="window.closeModal('modal-in')" class="p-2 text-slate-300"><i data-lucide="x" size="24"></i></button>
-                        </div>
-                        <div class="space-y-4">
-                            <select id="in-productId" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xs outline-none">${renderProductSelect()}</select>
-                            <div class="grid grid-cols-2 gap-3">
-                                <input id="in-quantity" type="number" placeholder="Jumlah" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-center text-3xl outline-none">
-                                <input id="in-storeName" type="text" placeholder="Pengirim/Toko" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-xs outline-none">
-                            </div>
-                            <button onclick="window.handleTransaction('IN')" class="w-full py-5 bg-emerald-600 text-white rounded-[2rem] font-black uppercase text-[11px] shadow-xl">Simpan Stok</button>
-                        </div>
-                    </div>
-                </div>
+const renderModals = () => {
+    const container = document.getElementById('modal-container');
 
-                <!-- Modal Out -->
-                <div id="modal-out" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex items-end sm:items-center justify-center">
-                    <div class="bg-white rounded-t-[3rem] w-full max-w-md p-6 pb-12 overflow-y-auto max-h-[90vh]">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-xl font-black text-orange-600 uppercase">Kirim Barang</h2>
-                            <button onclick="window.closeModal('modal-out')" class="p-2 text-slate-300"><i data-lucide="x" size="24"></i></button>
-                        </div>
-                        <div class="mb-6">
-                            ${window.state.isScanning ? `
-                                <div class="space-y-4">
-                                    <div class="relative aspect-square bg-black rounded-[2rem] overflow-hidden border-4 border-orange-500 shadow-2xl">
-                                        <video id="video-preview" playsinline autoplay class="w-full h-full object-cover"></video>
-                                        <div class="animate-scan-line"></div>
-                                        ${window.state.isAnalyzing ? '<div class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white p-4"><i data-lucide="loader-2" class="animate-spin mb-2"></i><p class="text-[10px] font-bold">Membaca Resi...</p></div>' : ''}
-                                    </div>
-                                    <div class="flex gap-2">
-                                        <button onclick="window.stopCamera()" class="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[10px]">Tutup</button>
-                                        <button onclick="window.captureAndAnalyze()" class="flex-[2] py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">Ambil & Scan AI</button>
-                                    </div>
-                                </div>` : `
-                                <button onclick="window.startCamera()" class="w-full py-8 bg-orange-50 border-2 border-dashed border-orange-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 text-orange-600 active:scale-95">
-                                    <div class="bg-orange-500 text-white p-4 rounded-3xl shadow-lg"><i data-lucide="camera"></i></div>
-                                    <div class="text-center">
-                                        <span class="font-black uppercase text-[11px] tracking-widest block">Kamera Scan Resi</span>
-                                        <span class="text-[8px] font-bold opacity-60 uppercase">Otomatis Baca Data</span>
-                                    </div>
-                                </button>`}
-                        </div>
-                        <div class="space-y-4">
-                            <select id="out-productId" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xs outline-none">${renderProductSelect()}</select>
-                            <div class="grid grid-cols-2 gap-3">
-                                <input id="out-quantity" type="number" placeholder="Jumlah" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-center text-3xl outline-none">
-                                <input id="out-tracking" type="text" placeholder="No Resi..." class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-[11px] outline-none border-2 border-orange-200 text-orange-600">
-                            </div>
-                            <input id="out-storeName" type="text" placeholder="Nama Pengirim (Toko)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-xs outline-none">
-                            <button onclick="window.handleTransaction('OUT')" class="w-full py-5 bg-orange-600 text-white rounded-[2rem] font-black uppercase text-[11px] shadow-xl">Simpan Transaksi</button>
-                        </div>
-                    </div>
-                </div>
+    container.innerHTML = `
+        <!-- Modal In -->
+        <div id="modal-in" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-2xl">
+                <h2 class="font-bold text-emerald-600">Stok Masuk</h2>
+                <button onclick="window.closeModal('modal-in')">Tutup</button>
+            </div>
+        </div>
 
-                <!-- Modal Add/Edit Product -->
-                <div id="modal-product" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex items-center justify-center p-6">
-                    <div class="bg-white rounded-[3rem] w-full max-w-sm p-8 shadow-2xl">
-                        <h2 class="text-xl font-black text-slate-800 mb-6 uppercase flex items-center gap-2"><i data-lucide="layers" class="text-orange-600"></i> ${window.state.editData ? 'Edit Produk' : 'Variasi Baru'}</h2>
-                        <div class="space-y-4">
-                            <input id="prod-name" type="text" list="titles-list" placeholder="Judul Utama" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-orange-500" value="${window.state.newProduct.name}">
-                            <datalist id="titles-list">${[...new Set(window.state.products.map(p => p.name))].map(t => `<option value="${t}">`).join('')}</datalist>
-                            <input id="prod-variant" type="text" placeholder="Warna / Ukuran" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-xs outline-none focus:ring-2 focus:ring-orange-500" value="${window.state.newProduct.variant}">
-                            <div class="grid grid-cols-2 gap-3">
-                                <input id="prod-sku" type="text" placeholder="SKU" class="w-full p-4 bg-slate-50 rounded-2xl font-bold text-xs outline-none" value="${window.state.newProduct.sku}">
-                                <input id="prod-stock" type="number" placeholder="Stok" class="w-full p-4 bg-slate-50 rounded-2xl font-black text-xs outline-none" value="${window.state.newProduct.initialStock}">
-                            </div>
-                            <div class="flex gap-4 pt-6">
-                                <button onclick="window.closeModal('modal-product')" class="flex-1 py-4 text-slate-400 font-bold uppercase text-[9px]">Batal</button>
-                                <button onclick="window.saveProduct()" class="flex-[2] py-4 bg-slate-900 text-white rounded-[1.5rem] font-black uppercase text-[10px] shadow-xl">Simpan</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- Modal Out -->
+        <div id="modal-out" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-2xl">
+                <h2 class="font-bold text-orange-600">Kirim Barang</h2>
+                <button onclick="window.closeModal('modal-out')">Tutup</button>
+            </div>
+        </div>
 
-                <!-- Modal Settings -->
-                <div id="modal-settings" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-6 text-center">
-                    <div class="bg-white rounded-[3rem] w-full max-w-sm p-8 shadow-2xl">
-                        <div class="flex justify-between items-center mb-6 text-left">
-                            <h2 class="text-xl font-black text-slate-800 uppercase tracking-tighter">Pengaturan</h2>
-                            <button onclick="window.closeModal('modal-settings')" class="p-2 text-slate-300"><i data-lucide="x" size="24"></i></button>
-                        </div>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase mb-4 tracking-widest">ID Aplikasi: 1.0.1</p>
-                        <div class="text-[9px] font-black text-orange-600 uppercase mb-8">Gudang Master Pro AI</div>
-                        <button onclick="location.reload()" class="w-full py-4 bg-slate-100 rounded-2xl text-[10px] font-black uppercase">Segarkan Aplikasi</button>
-                    </div>
-                </div>
-            `;
-            lucide.createIcons();
-        };
+        <!-- Modal Product -->
+        <div id="modal-product" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-2xl">
+                <h2 class="font-bold">Produk</h2>
+                <button onclick="window.closeModal('modal-product')">Tutup</button>
+            </div>
+        </div>
+
+        <!-- Modal Settings -->
+        <div id="modal-settings" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-2xl">
+                <h2 class="font-bold">Settings</h2>
+                <button onclick="window.closeModal('modal-settings')">Tutup</button>
+            </div>
+        </div>
+    `;
+
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+};
 
         const renderProductSelect = () => {
             return '<option value="">-- Pilih Barang --</option>' + 
@@ -561,26 +509,7 @@ const product = window.state.products.find(p => {
     console.log("GAK MATCH:", item.productName);
 }
 
-                    await addDoc(
-                        collection(db,'artifacts',appId,'public','data','transactions'),
-                        {
-                            productId: product.id,
-                            productName: product.name,
-                            variant: product.variant,
-                            type: "OUT",
-                            quantity: item.quantity,
-                            timestamp: Date.now(),
-                            storeName: store,
-                            trackingNumber: trk
-                        }
-                    );
-
-                    await updateDoc(
-                        doc(db,'artifacts',appId,'public','data','products',product.id),
-                        {
-                            stock: Number(product.stock) - Number(item.quantity)
-                        }
-                    );
+                    
                 }
             }
 
