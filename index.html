@@ -384,7 +384,7 @@
             window.render();
         };
 
-        window.initAddProduct = () => {
+window.initAddProduct = () => {
     window.state.editData = null;
     window.state.newProduct = { 
         name: '', 
@@ -400,18 +400,11 @@
     }, 100);
 };
 
-        window.initDuplicate = (id) => {
-            const p = window.state.products.find(x => x.id === id);
-            window.state.editData = null;
-            window.state.newProduct = { name: p.name, variant: '', sku: '', initialStock: '0' };
-            window.showModal('modal-product');
-            window.render();
-        };
-
-        window.initAddProduct = () => {
+window.initDuplicate = (id) => {
+    const p = window.state.products.find(x => x.id === id);
     window.state.editData = null;
     window.state.newProduct = { 
-        name: '', 
+        name: p.name, 
         variant: '', 
         sku: '', 
         initialStock: '0' 
@@ -423,7 +416,7 @@
         window.showModal('modal-product');
     }, 100);
 };
-        };
+
 
         window.saveProduct = async () => {
             const name = document.getElementById('prod-name').value;
