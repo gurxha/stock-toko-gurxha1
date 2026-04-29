@@ -402,12 +402,36 @@ window.initAddProduct = () => {
 
 window.initDuplicate = (id) => {
     const p = window.state.products.find(x => x.id === id);
+
     window.state.editData = null;
     window.state.newProduct = { 
         name: p.name, 
         variant: '', 
         sku: '', 
         initialStock: '0' 
+    };
+
+    window.render();
+
+    setTimeout(() => {
+        window.showModal('modal-product');
+    }, 100);
+};
+
+window.initEdit = (id) => {
+    const p = window.state.products.find(x => x.id === id);
+
+    if (!p) {
+        alert("Produk tidak ditemukan");
+        return;
+    }
+
+    window.state.editData = p;
+    window.state.newProduct = {
+        name: p.name,
+        variant: p.variant,
+        sku: p.sku || '',
+        initialStock: p.stock
     };
 
     window.render();
