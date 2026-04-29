@@ -62,8 +62,25 @@
 
         // --- KONFIGURASI DATABASE ---
         // Variabel __firebase_config disediakan oleh lingkungan runtime
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'gudang-master-pro';
+        const firebaseConfig = {
+
+  apiKey: "AIzaSyAlXIlhX7JsnZL7vCeuhKr2ws2-UqgvnW8",
+
+  authDomain: "gurxha-stock.firebaseapp.com",
+
+  projectId: "gurxha-stock",
+
+  storageBucket: "gurxha-stock.firebasestorage.app",
+
+  messagingSenderId: "64309943373",
+
+  appId: "1:64309943373:web:75d20c74460ba69ba5d004",
+
+  measurementId: "G-1T7JR4ZHJP"
+
+};
+
+        const appId =  ''gudang-master-pro'';
         const apiKey = ""; // API Key Gemini (Otomatis terisi di runtime)
 
         const app = initializeApp(firebaseConfig);
@@ -510,12 +527,10 @@
 
         // --- SISTEM AWAL ---
         const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
+           const initAuth = async () => {
+  await signInAnonymously(auth);
+};
+       
 
         const initDataSync = () => {
             const paths = ['products', 'transactions', 'stores'];
