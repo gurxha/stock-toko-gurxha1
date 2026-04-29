@@ -490,17 +490,76 @@ window.handleTransaction = async (type) => {
 
             for(const item of window.state.scannedItems){
 
-                const product = window.state.products.find(p =>
-                    p.name.toLowerCase().includes(item.productName.toLowerCase()) &&
-                    p.variant.toLowerCase().includes(item.variant.toLowerCase())
-                );
+                const normalizeText = (text) => {
+    const stopWords = [
+        "rajawali",
+        "r&w",
+        "bahan",
+        "kue",
+        "brownies",
+        "premium",
+        "murah",
+        "original",
+        "best seller",
+        "shopee",
+        "tokopedia",
+        "tiktok"
+    ];
+
+    let clean = text.toLowerCase();
+
+    stopWords.forEach(word => {
+        clean = clean.replaceAll(word, "");
+    });
+
+    return clean
+        .replace(/[^\w\s]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+};
+
+const product = window.state.products.find(p => {
+    const aiName = normalizeText(item.productName);
+    const appName = normalizeText(p.name);
+
+    const variantMatch = !item.variant ||
+        normalizeText(p.variant).includes(normalizeText(item.variant));
+
+    return (aiName.includes(appName) || appName.includes(aiName)) && variantMatch;
+});
+                
 
                 if(product){
 
-                    if(product.stock < item.quantity){
-                        alert(`Stok ${product.name} ${product.variant} kurang`);
-                        continue;
-                    }
+    if(product.stock < item.quantity){
+        alert(`Stok ${product.name} ${product.variant} kurang`);
+        continue;
+    }
+
+    await addDoc(
+        collection(db,'artifacts',appId,'public','data','transactions'),
+        {
+            productId: product.id,
+            productName: product.name,
+            variant: product.variant,
+            type: "OUT",
+            quantity: item.quantity,
+            timestamp: Date.now(),
+            storeName: store,
+            trackingNumber: trk
+        }
+    );
+
+    await updateDoc(
+        doc(db,'artifacts',appId,'public','data','products',product.id),
+        {
+            stock: Number(product.stock) - Number(item.quantity)
+        }
+    );
+
+} else {
+    console.log("GAK MATCH:", item.productName);
+}
 
                     await addDoc(
                         collection(db,'artifacts',appId,'public','data','transactions'),
