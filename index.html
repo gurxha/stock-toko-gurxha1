@@ -399,12 +399,21 @@
             window.render();
         };
 
-        window.initEdit = (id) => {
-            const p = window.state.products.find(x => x.id === id);
-            window.state.editData = p;
-            window.state.newProduct = { name: p.name, variant: p.variant, sku: p.sku || '', initialStock: p.stock };
-            window.showModal('modal-product');
-            window.render();
+        window.initAddProduct = () => {
+    window.state.editData = null;
+    window.state.newProduct = { 
+        name: '', 
+        variant: '', 
+        sku: '', 
+        initialStock: '0' 
+    };
+
+    window.render();
+
+    setTimeout(() => {
+        window.showModal('modal-product');
+    }, 100);
+};
         };
 
         window.saveProduct = async () => {
