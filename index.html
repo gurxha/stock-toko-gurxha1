@@ -183,10 +183,14 @@
                     ${Object.entries(groups).map(([name, variants]) => `
                         <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
                             <div class="p-4 flex justify-between items-center bg-slate-50/50 cursor-pointer" onclick="window.toggleGroup('${name}')">
-                                <div class="flex items-center gap-2 truncate pr-4">
-                                    <i data-lucide="chevron-right" size="16" class="text-slate-300 transition-transform ${window.state.expandedGroups[name] !== false ? 'rotate-90' : ''}"></i>
-                                    <h4 class="font-black text-slate-800 text-[11px] uppercase truncate">${name}</h4>
-                                </div>
+                               <div class="flex items-center gap-2 truncate pr-4">
+    <i data-lucide="chevron-right" size="16" class="text-slate-300 transition-transform ${window.state.expandedGroups[name] !== false ? 'rotate-90' : ''}"></i>
+
+    <h4 class="font-black text-orange-700 text-[11px] uppercase truncate tracking-wide bg-orange-50 px-3 py-1 rounded-full inline-block shadow-sm">
+        ${name}
+    </h4>
+</div>
+
                                 <div class="flex items-center gap-2">
                                     <button onclick="event.stopPropagation(); window.initDuplicate('${variants[0].id}')" class="p-1.5 text-slate-300 hover:text-orange-500" title="Duplikat"><i data-lucide="copy" size="16"></i></button>
                                     <span class="bg-slate-900 px-3 py-1 rounded-full text-[9px] font-black text-white">
