@@ -385,11 +385,20 @@
         };
 
         window.initAddProduct = () => {
-            window.state.editData = null;
-            window.state.newProduct = { name: '', variant: '', sku: '', initialStock: '0' };
-            window.showModal('modal-product');
-            window.render();
-        };
+    window.state.editData = null;
+    window.state.newProduct = { 
+        name: '', 
+        variant: '', 
+        sku: '', 
+        initialStock: '0' 
+    };
+
+    window.render();
+
+    setTimeout(() => {
+        window.showModal('modal-product');
+    }, 100);
+};
 
         window.initDuplicate = (id) => {
             const p = window.state.products.find(x => x.id === id);
