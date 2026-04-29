@@ -81,7 +81,7 @@
 };
 
         const appId = "gudang-master-pro";
-        const apiKey = ""; // API Key Gemini (Otomatis terisi di runtime)
+        const apiKey = "AIzaSyDjxnVQs1LLhluWWAakk75ol58t0cnqKRw"; // API Key Gemini (Otomatis terisi di runtime)
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -611,29 +611,53 @@ window.handleTransaction = async (type) => {
             window.render();
             
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: "Ekstrak JSON dari resi/order menjadi format:
-{
-  storeName: '',
-  trackingNumber: '',
-  items: [
+const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
     {
-      productName: '',
-      variant: '',
-      quantity: 0
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            contents: [
+                {
+                    parts: [
+                        {
+                            text: `Ekstrak JSON dari resi/order menjadi format:
+{
+  "storeName": "",
+  "trackingNumber": "",
+  "items": [
+    {
+      "productName": "",
+      "variant": "",
+      "quantity": 0
     }
   ]
 }
 
-Jika ada banyak varian dalam satu resi, masukkan semuanya ke dalam items." }, { inlineData: { mimeType: "image/jpeg", data: base64 } }] }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    })
-                });
-                const res = await response.json();
-                const dataText = res.candidates[0].content.parts[0].text;
-                const data = JSON.parse(dataText);
+Jika ada banyak varian dalam satu resi, masukkan semuanya ke dalam array items.`
+                        },
+                        {
+                            inlineData: {
+                                mimeType: "image/jpeg",
+                                data: base64
+                            }
+                        }
+                    ]
+                }
+            ],
+            generationConfig: {
+                responseMimeType: "application/json"
+            }
+        })
+    }
+);
+
+const res = await response.json();
+const dataText = res.candidates[0].content.parts[0].text;
+const data = JSON.parse(dataText);
+            
                 
                 document.getElementById('out-storeName').value = data.storeName || '';
 document.getElementById('out-tracking').value = data.trackingNumber || '';
