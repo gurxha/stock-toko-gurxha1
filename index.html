@@ -342,7 +342,42 @@ ${window.state.scannedItems?.length ? `
                 <button onclick="window.closeModal('modal-settings')">Tutup</button>
             </div>
         </div>
-    `;
+   <!-- Modal Product -->
+<div id="modal-product" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+  <div class="bg-white p-6 rounded-2xl w-full max-w-md space-y-3">
+
+    <h2 class="font-bold text-blue-600">
+      ${window.state.editData ? 'Edit Produk' : 'Tambah Produk'}
+    </h2>
+
+    <input id="prod-name" placeholder="Nama Produk"
+      value="${window.state.newProduct.name || ''}"
+      class="w-full border p-2 rounded" />
+
+    <input id="prod-variant" placeholder="Varian"
+      value="${window.state.newProduct.variant || ''}"
+      class="w-full border p-2 rounded" />
+
+    <input id="prod-sku" placeholder="SKU"
+      value="${window.state.newProduct.sku || ''}"
+      class="w-full border p-2 rounded" />
+
+    <input id="prod-stock" type="number" placeholder="Stock"
+      value="${window.state.newProduct.initialStock || 0}"
+      class="w-full border p-2 rounded" />
+
+    <button onclick="window.saveProduct()" 
+      class="bg-green-600 text-white px-4 py-2 rounded w-full">
+      Simpan
+    </button>
+
+    <button onclick="window.closeModal('modal-product')" 
+      class="text-sm text-gray-400 w-full">
+      Tutup
+    </button>
+
+  </div>
+</div> `;
 
     if (window.lucide) {
         lucide.createIcons();
@@ -746,11 +781,10 @@ window.render();
              } catch (e) {
     console.error("AI ERROR DETAIL:", e);
     alert(e.message || "AI gagal membaca resi.");
-            } finally {
-                window.state.isAnalyzing = false;
-                window.render();
-            }
-        };
+} finally {
+    window.state.isAnalyzing = false;
+    window.render();
+};
 
         // --- SISTEM AWAL ---
        const initAuth = async () => {
