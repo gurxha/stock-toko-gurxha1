@@ -619,7 +619,7 @@ const qty = qtyEl ? Number(qtyEl.value) : 0;
             c.width = v.videoWidth;
             c.height = v.videoHeight;
             c.getContext('2d').drawImage(v, 0, 0);
-            const base64 = c.toDataURL('image/jpeg', 0.8).split(',')[1];
+            const base64 = c.toDataURL('image/jpeg', 0.5).split(',')[1];
             window.stopCamera();
             window.state.isAnalyzing = true;
             window.render();
@@ -680,11 +680,16 @@ Tanpa teks lain.`
 );
 
 const res = await response.json();
-
-if (!res.candidates || !res.candidates.length) {
-    throw new Error("AI tidak memberikan respon");
+console.log("AI FULL RESPONSE:", res);
+if (res.error) {
+    console.log("AI ERROR RAW:", res.error);
+    throw new Error(res.error.message || "API error");
 }
 
+if (!res.candidates || !res.candidates.length) {
+    console.log("AI EMPTY:", res);
+    throw new Error("AI tidak memberikan respon");
+}
 const parts = res.candidates[0]?.content?.parts;
 
 if (!parts || !parts.length) {
