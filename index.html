@@ -611,6 +611,10 @@ const qty = qtyEl ? Number(qtyEl.value) : 0;
 
         window.captureAndAnalyze = async () => {
             const v = document.getElementById('video-preview');
+            if (!v.videoWidth) {
+    alert("Kamera belum siap, tunggu sebentar...");
+    return;
+}
             const c = document.createElement('canvas');
             c.width = v.videoWidth;
             c.height = v.videoHeight;
@@ -737,7 +741,6 @@ window.render();
              } catch (e) {
     console.error("AI ERROR DETAIL:", e);
     alert(e.message || "AI gagal membaca resi.");
-}
             } finally {
                 window.state.isAnalyzing = false;
                 window.render();
