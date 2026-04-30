@@ -287,20 +287,53 @@ const renderModals = () => {
         </div>
 
         <!-- Modal Out -->
-        <div id="modal-out" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-            <div class="bg-white p-6 rounded-2xl">
-                <h2 class="font-bold text-orange-600">Kirim Barang</h2>
-                <button onclick="window.closeModal('modal-out')">Tutup</button>
-            </div>
-        </div>
+<div id="modal-out" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-2xl w-full max-w-md space-y-3">
 
-        <!-- Modal Product -->
-        <div id="modal-product" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-            <div class="bg-white p-6 rounded-2xl">
-                <h2 class="font-bold">Produk</h2>
-                <button onclick="window.closeModal('modal-product')">Tutup</button>
-            </div>
-        </div>
+        <h2 class="font-bold text-orange-600">Kirim Barang</h2>
+
+        <input id="out-storeName" placeholder="Nama Toko"
+            class="w-full border p-2 rounded" />
+
+        <input id="out-tracking" placeholder="No Resi"
+            class="w-full border p-2 rounded" />
+
+        <!-- 🔥 TAMBAH INI -->
+        <video id="video-preview" autoplay playsinline class="w-full rounded"></video>
+        <div class="text-center text-xs font-bold text-orange-500">
+    ${window.state.isScanning ? '📷 Kamera Aktif...' : ''}
+    ${window.state.isAnalyzing ? '🧠 AI sedang membaca resi...' : ''}
+</div>
+${window.state.scannedItems?.length ? `
+<div class="text-xs text-left bg-slate-100 p-2 rounded">
+    ${window.state.scannedItems.map(i => `
+        <div>• ${i.productName} (${i.quantity})</div>
+    `).join('')}
+</div>
+` : ''}
+
+        <button onclick="window.startCamera()" 
+            class="bg-orange-500 text-white px-4 py-2 rounded w-full">
+            Scan Resi
+        </button>
+
+        <button onclick="window.captureAndAnalyze()" 
+            class="bg-blue-600 text-white px-4 py-2 rounded w-full">
+            Ambil & Analisa
+        </button>
+
+        <button onclick="window.handleTransaction('OUT')" 
+            class="bg-green-600 text-white px-4 py-2 rounded w-full">
+            Proses
+        </button>
+
+        <button onclick="window.closeModal('modal-out')" 
+            class="text-sm text-gray-400 w-full">
+            Tutup
+        </button>
+
+    </div>
+</div>
 
         <!-- Modal Settings -->
         <div id="modal-settings" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
@@ -428,100 +461,89 @@ window.initEdit = (id) => {
         };
 window.handleTransaction = async (type) => {
     const prefix = type === 'IN' ? 'in' : 'out';
-    const store = document.getElementById(`${prefix}-storeName`).value || 'Umum';
+    const storeEl = document.getElementById(`${prefix}-storeName`);
+const store = storeEl ? storeEl.value : 'Umum';
     const trk = document.getElementById(`${prefix}-tracking`)?.value || '';
 
     try {
 
         // MULTI ITEM DARI SCAN RESI
-        if(type === "OUT" && window.state.scannedItems?.length > 0){
+       if(type === "OUT" && window.state.scannedItems?.length > 0){
 
-            for(const item of window.state.scannedItems){
+    for(const item of window.state.scannedItems){
 
-                const normalizeText = (text) => {
-    const stopWords = [
-        "rajawali",
-        "r&w",
-        "bahan",
-        "kue",
-        "brownies",
-        "premium",
-        "murah",
-        "original",
-        "best seller",
-        "shopee",
-        "tokopedia",
-        "tiktok"
-    ];
+        const normalizeText = (text) => {
+            const stopWords = [
+                "rajawali","r&w","bahan","kue","brownies",
+                "premium","murah","original","best seller",
+                "shopee","tokopedia","tiktok"
+            ];
 
-    let clean = text.toLowerCase();
+            let clean = (text || "").toLowerCase();
 
-    stopWords.forEach(word => {
-        clean = clean.replaceAll(word, "");
-    });
+            stopWords.forEach(word => {
+                clean = clean.replaceAll(word, "");
+            });
 
-    return clean
-        .replace(/[^\w\s]/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-};
+            return clean
+                .replace(/[^\w\s]/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+        };
 
-const product = window.state.products.find(p => {
-    const aiName = normalizeText(item.productName);
-    const appName = normalizeText(p.name);
+        const product = window.state.products.find(p => {
+            const aiName = normalizeText(item.productName);
+            const appName = normalizeText(p.name);
 
-    const variantMatch = !item.variant ||
-        normalizeText(p.variant).includes(normalizeText(item.variant));
+            const variantMatch = !item.variant ||
+                normalizeText(p.variant).includes(normalizeText(item.variant));
 
-    return (aiName.includes(appName) || appName.includes(aiName)) && variantMatch;
-});
-                
+            return (aiName.includes(appName) || appName.includes(aiName)) && variantMatch;
+        });
 
-                if(product){
+        if (!product) {
+            console.log("GAK MATCH:", item.productName);
+            continue;
+        }
 
-    if(product.stock < item.quantity){
-        alert(`Stok ${product.name} ${product.variant} kurang`);
-        continue;
+        if (product.stock < item.quantity) {
+            alert(`Stok ${product.name} ${product.variant} kurang`);
+            continue;
+        }
+
+        await addDoc(
+            collection(db,'artifacts',appId,'public','data','transactions'),
+            {
+                productId: product.id,
+                productName: product.name,
+                variant: product.variant,
+                type: "OUT",
+                quantity: item.quantity,
+                timestamp: Date.now(),
+                storeName: store,
+                trackingNumber: trk
+            }
+        );
+
+        await updateDoc(
+            doc(db,'artifacts',appId,'public','data','products',product.id),
+            {
+                stock: Number(product.stock) - Number(item.quantity)
+            }
+        );
     }
 
-    await addDoc(
-        collection(db,'artifacts',appId,'public','data','transactions'),
-        {
-            productId: product.id,
-            productName: product.name,
-            variant: product.variant,
-            type: "OUT",
-            quantity: item.quantity,
-            timestamp: Date.now(),
-            storeName: store,
-            trackingNumber: trk
-        }
-    );
-
-    await updateDoc(
-        doc(db,'artifacts',appId,'public','data','products',product.id),
-        {
-            stock: Number(product.stock) - Number(item.quantity)
-        }
-    );
-
-} else {
-    console.log("GAK MATCH:", item.productName);
+    alert("Semua item resi berhasil diproses");
+    window.state.scannedItems = [];
+    window.closeModal('modal-out');
+    return;
 }
-
-                    
-                }
-            }
-
-            alert("Semua item resi berhasil diproses");
-            window.state.scannedItems = [];
-            window.closeModal('modal-out');
-            return;
-        }
-
         // MANUAL MODE NORMAL
-        const pid = document.getElementById(`${prefix}-productId`).value;
-        const qty = Number(document.getElementById(`${prefix}-quantity`).value);
+        const pidEl = document.getElementById(`${prefix}-productId`);
+const qtyEl = document.getElementById(`${prefix}-quantity`);
+
+const pid = pidEl ? pidEl.value : '';
+const qty = qtyEl ? Number(qtyEl.value) : 0;
 
         if (!pid || !qty) return alert("Pilih barang dan jumlah!");
 
@@ -647,8 +669,11 @@ const dataText = res.candidates[0].content.parts[0].text;
 const data = JSON.parse(dataText);
             
                 
-                document.getElementById('out-storeName').value = data.storeName || '';
-document.getElementById('out-tracking').value = data.trackingNumber || '';
+                const storeInput = document.getElementById('out-storeName');
+const trackingInput = document.getElementById('out-tracking');
+
+if (storeInput) storeInput.value = data.storeName || '';
+if (trackingInput) trackingInput.value = data.trackingNumber || '';
 
 window.state.scannedItems = data.items || [];
 window.render();
