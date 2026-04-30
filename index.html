@@ -88,21 +88,24 @@
         const db = getFirestore(app);
 
         // --- STATE APLIKASI ---
-        window.state = {
-            user: null,
-            products: [],
-            transactions: [],
-            stores: [],
-            activeTab: 'dashboard',
-            searchTerm: '',
-            selectedMonth: new Date().toISOString().slice(0, 7),
-            isScanning: false,
-            isAnalyzing: false,
-            loading: true,
-            expandedGroups: {},
-            editData: null,
-            newProduct: { name: '', variant: '', sku: '', initialStock: '0' }
-        };
+       window.state = {
+    user: null,
+    products: [],
+    transactions: [],
+    stores: [],
+    activeTab: 'dashboard',
+    searchTerm: '',
+    selectedMonth: new Date().toISOString().slice(0, 7),
+    isScanning: false,
+    isAnalyzing: false,
+    loading: true,
+    expandedGroups: {},
+    editData: null,
+
+    scannedItems: [],
+
+    newProduct: { name: '', variant: '', sku: '', initialStock: '0' }
+};
 
         // --- FUNGSI RENDER UTAMA ---
         const render = () => {
@@ -525,16 +528,21 @@ const store = storeEl ? storeEl.value : 'Umum';
                 .replace(/\s+/g, " ")
                 .trim();
         };
+const product = window.state.products.find(p => {
+    const aiName = normalizeText(item.productName);
+    const appName = normalizeText(p.name);
 
-        const product = window.state.products.find(p => {
-            const aiName = normalizeText(item.productName);
-            const appName = normalizeText(p.name);
+    const variantMatch = !item.variant ||
+        normalizeText(p.variant).includes(normalizeText(item.variant));
 
-            const variantMatch = !item.variant ||
-                normalizeText(p.variant).includes(normalizeText(item.variant));
+    const similarity = (a, b) => {
+        const wordsA = a.split(" ");
+        const wordsB = b.split(" ");
+        return wordsA.filter(w => wordsB.includes(w)).length;
+    };
 
-            return (aiName.includes(appName) || appName.includes(aiName)) && variantMatch;
-        });
+    return similarity(aiName, appName) >= 2 && variantMatch;
+});
 
         if (!product) {
             console.log("GAK MATCH:", item.productName);
@@ -647,7 +655,7 @@ const qty = qtyEl ? Number(qtyEl.value) : 0;
         window.captureAndAnalyze = async () => {
             const v = document.getElementById('video-preview');
              try {
-            if (!v.videoWidth) {
+            if (!v || v.readyState !== 4) {
     alert("Kamera belum siap, tunggu sebentar...");
     return;
 }
@@ -747,13 +755,19 @@ if (!jsonMatch) {
 }
 
 let data;
+
 try {
-    data = JSON.parse(jsonMatch[0]);
+    data = JSON.parse(cleanText);
 } catch {
-    console.log("AI RAW:", cleanText);
-    throw new Error("Format JSON tidak valid");
+    try {
+        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+        data = JSON.parse(jsonMatch[0]);
+    } catch {
+        console.log("AI RAW:", cleanText);
+        throw new Error("Format JSON tidak valid dari AI");
+    }
 }
-                data.items = data.items.map(i => {
+                data.items = (data.items || []).map(i => {
     let name = (i.productName || "").toLowerCase();
 
     name = name.replace(/\n/g, " ");
