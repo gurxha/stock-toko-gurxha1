@@ -633,7 +633,27 @@ const response = await fetch(
                 {
                     parts: [
                         {
-                            text: `Ekstrak JSON dari resi/order menjadi format:
+                            inline_data: {
+                                mime_type: "image/jpeg",
+                                data: base64
+                            }
+                        },
+                        {
+                            text: `Kamu adalah AI OCR profesional untuk membaca resi marketplace Indonesia (Shopee, SPX, REG).
+
+Ambil:
+- trackingNumber dari "No. Resi"
+- storeName dari "Pengirim"
+- items dari "Nama Produk"
+
+ATURAN:
+- Produk bisa multi baris → gabung jadi satu
+- Ambil quantity dari Qty (default 1)
+- Ambil variant jika ada
+- Abaikan alamat, COD, barcode
+
+OUTPUT HARUS JSON:
+
 {
   "storeName": "",
   "trackingNumber": "",
@@ -646,27 +666,44 @@ const response = await fetch(
   ]
 }
 
-Jika ada banyak varian dalam satu resi, masukkan semuanya ke dalam array items.`
-                        },
-                        {
-                            inlineData: {
-                                mimeType: "image/jpeg",
-                                data: base64
-                            }
+Tanpa teks lain.`
                         }
                     ]
                 }
-            ],
-            generationConfig: {
-                responseMimeType: "application/json"
-            }
+            ]
         })
     }
 );
 
 const res = await response.json();
 const dataText = res.candidates[0].content.parts[0].text;
-const data = JSON.parse(dataText);
+let cleanText = dataText
+    .replace(/```json/g, "")
+    .replace(/```/g, "")
+    .trim();
+
+let data;
+try {
+    data = JSON.parse(cleanText);
+} catch (e) {
+    console.log("RAW AI:", dataText);
+    alert("AI gagal format JSON");
+    return;
+}
+                data.items = data.items.map(i => {
+    let name = (i.productName || "").toLowerCase();
+
+    name = name.replace(/\n/g, " ");
+    name = name.replace(/rajawali|r&w|premium|murah|original|bahan|kue/gi, "");
+    name = name.replace(/[^a-z0-9\s]/gi, "");
+    name = name.replace(/\s+/g, " ").trim();
+
+    return {
+        ...i,
+        productName: name,
+        quantity: Number(i.quantity) || 1
+    };
+});
             
                 
                 const storeInput = document.getElementById('out-storeName');
