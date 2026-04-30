@@ -676,19 +676,37 @@ Tanpa teks lain.`
 );
 
 const res = await response.json();
-const dataText = res.candidates[0].content.parts[0].text;
+
+if (!res.candidates || !res.candidates.length) {
+    throw new Error("AI tidak memberikan respon");
+}
+
+const parts = res.candidates[0]?.content?.parts;
+
+if (!parts || !parts.length) {
+    throw new Error("AI respon kosong");
+}
+
+const dataText = parts[0].text;
+
 let cleanText = dataText
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
+  .replace(/```json/g, "")
+  .replace(/```/g, "")
+  .trim();
+
+// ambil JSON saja
+const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+
+if (!jsonMatch) {
+  throw new Error("AI tidak mengembalikan JSON");
+}
 
 let data;
 try {
-    data = JSON.parse(cleanText);
+  data = JSON.parse(jsonMatch[0]);
 } catch (e) {
-    console.log("RAW AI:", dataText);
-    alert("AI gagal format JSON");
-    return;
+  console.log("AI RAW:", cleanText);
+  throw new Error("Format JSON tidak valid");
 }
                 data.items = data.items.map(i => {
     let name = (i.productName || "").toLowerCase();
@@ -716,8 +734,10 @@ window.state.scannedItems = data.items || [];
 window.render();
                 
         
-            } catch (e) {
-                alert("AI gagal membaca resi.");
+             } catch (e) {
+    console.error("AI ERROR DETAIL:", e);
+    alert(e.message || "AI gagal membaca resi.");
+}
             } finally {
                 window.state.isAnalyzing = false;
                 window.render();
