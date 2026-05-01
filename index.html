@@ -56,15 +56,11 @@
 
     <!-- Firebase SDK & Logic -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- KONFIGURASI DATABASE ---
-        // Variabel __firebase_config disediakan oleh lingkungan runtime
-        const firebaseConfig = {
-
-// 🔥 FIREBASE (JANGAN DIUBAH)
+// 🔥 FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyB2yBDHSLQ79chDudLRonTjIAKOVldtzsw",
   authDomain: "gurxha-stock.firebaseapp.com",
@@ -75,16 +71,15 @@ const firebaseConfig = {
   measurementId: "G-1T7JR4ZHJP"
 };
 
-// 🔥 GEMINI (INI YANG HARUS DIGANTI)
+// 🔥 GEMINI KEY
 const geminiApiKey = "AIzaSyAbStZWJJe4IPVM7HnmUc4IjM-FwtjQsKk";
-
 
 // 🔥 INIT FIREBASE
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-
+</script>
 // 🔥 FUNCTION SCAN RESI (FIXED)
 async function scanResi(base64Image) {
   try {
