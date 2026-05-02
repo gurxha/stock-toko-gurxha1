@@ -568,20 +568,41 @@ window.captureAndAnalyze = async () => {
         if (tokoMatch) storeName = tokoMatch[1];
 
         // ambil produk
-        const productMatch = text.match(/Nama Produk([\s\S]*)/i);
+        // ambil produk
+const productMatch = text.match(/Nama Produk([\s\S]*)/i);
 
-        if (productMatch) {
-            const line = productMatch[1].split("\n")[1];
+if (productMatch) {
+   // ================= AMBIL PRODUK LEBIH KUAT =================
+const lines = text.split("\n")
+    .map(l => l.trim())
+    .filter(l => l.length > 5);
 
-            if (line) {
-                items.push({
-                    productName: line.trim(),
-                    variant: "",
-                    quantity: 1
-                });
-            }
-        }
+// cari baris yang kemungkinan produk
+for (let line of lines) {
 
+    const lower = line.toLowerCase();
+
+    if (
+        lower.includes("kg") ||
+        lower.includes("pcs") ||
+        lower.includes("produk") ||
+        lower.includes("makanan")
+    ) {
+        items.push({
+            productName: line,
+            variant: "",
+            quantity: 1
+        });
+        break;
+    }
+}
+    if (items.length === 0) {
+    items.push({
+        productName: "Produk dari resi",
+        variant: "",
+        quantity: 1
+    });
+}
         window.state.scannedItems = items;
 
         document.getElementById('out-storeName').value = storeName;
