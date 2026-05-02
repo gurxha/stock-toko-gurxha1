@@ -552,16 +552,17 @@ window.captureAndAnalyze = async () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            {
-                                inlineData: {
-                                    mimeType: "image/jpeg",
-                                    data: base64
-                                }
-                            },
-                            {
-                                text: `Baca resi marketplace Indonesia.
+                    contents: [
+                        {
+                            parts: [
+                                {
+                                    inlineData: {
+                                        mimeType: "image/jpeg",
+                                        data: base64
+                                    }
+                                },
+                                {
+                                    text: `Baca resi marketplace Indonesia.
 
 Ambil:
 - nama produk
@@ -582,9 +583,10 @@ OUTPUT HARUS JSON:
     }
   ]
 }`
-                            }
-                        ]
-                    }]
+                                }
+                            ]
+                        }
+                    ]
                 })
             }
         );
@@ -592,15 +594,19 @@ OUTPUT HARUS JSON:
         const res = await response.json();
 
         let text = res.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+        text = text
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
 
         let data;
 
         try {
             data = JSON.parse(text);
-        } catch {
-            console.log("AI TEXT:", text);
-            throw new Error("Format AI salah");
+        } catch (err) {
+            console.log("AI ERROR TEXT:", text);
+            throw new Error("Format AI tidak valid");
         }
 
         window.state.scannedItems = data.items || [];
@@ -619,21 +625,25 @@ OUTPUT HARUS JSON:
     }
 };
 
+
 // ================== TRANSAKSI ==================
 window.handleTransaction = async (type) => {
     const store = document.getElementById('out-storeName').value || 'Umum';
     const trk = document.getElementById('out-tracking').value || '';
 
     try {
-        for(const item of window.state.scannedItems){
+        for (const item of window.state.scannedItems || []) {
 
-            let product = findBestMatch(item.productName, window.state.products);
+            const product = window.state.products.find(p =>
+                (p.name || "").toLowerCase().includes((item.productName || "").toLowerCase())
+            );
 
             if (!product) {
-                product = await createProductAuto(item.productName);
+                console.warn("Produk tidak ditemukan:", item.productName);
+                continue;
             }
 
-            await addDoc(collection(db,'transactions'), {
+            await addDoc(collection(db, 'transactions'), {
                 productId: product.id,
                 productName: product.name,
                 variant: product.variant,
@@ -644,16 +654,17 @@ window.handleTransaction = async (type) => {
                 trackingNumber: trk
             });
 
-            await updateDoc(doc(db,'products',product.id), {
+            await updateDoc(doc(db, 'products', product.id), {
                 stock: Number(product.stock) - Number(item.quantity)
             });
         }
 
-        alert("Berhasil");
+        alert("✅ Transaksi berhasil");
         window.closeModal('modal-out');
 
     } catch (e) {
-        alert("Gagal");
+        console.error(e);
+        alert("❌ Transaksi gagal");
     }
 };
         let streamRef = null;
