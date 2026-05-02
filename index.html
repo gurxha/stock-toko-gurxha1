@@ -564,32 +564,11 @@ window.initEdit = (id) => {
 };
 
 
-        window.saveProduct = async () => {
-            const name = document.getElementById('prod-name').value;
-            const variant = document.getElementById('prod-variant').value;
-            const sku = document.getElementById('prod-sku').value;
-            const stock = Number(document.getElementById('prod-stock').value);
-
-            if (!name) return alert("Judul Utama wajib diisi!");
-
-            try {
-                if (window.state.editData) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', window.state.editData.id), {
-                        name, variant, sku, stock
-                    });
-                } else {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), {
-                        name, variant, sku, stock, timestamp: Date.now()
-                    });
-                }
-                document.getElementById('prod-variant').value = '';
-                document.getElementById('prod-sku').value = '';
-                alert("Data berhasil disimpan.");
-                window.render();
-            } catch (e) {
-                console.error(e);
-            }
-        };
+window.deleteProduct = async (id) => {
+    if (confirm("Hapus produk?")) {
+        await deleteDoc(doc(db, 'products', id));
+    }
+};
 
         window.deleteProduct = async (id) => {
             if (confirm("Hapus data varian ini selamanya?")) {
@@ -904,21 +883,28 @@ window.render();
 };
        
 
-        const initDataSync = () => {
-            const paths = ['products', 'transactions', 'stores'];
-            paths.forEach(path => {
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', path);
-                onSnapshot(colRef, (snap) => {
-                    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    if (path === 'products') window.state.products = data;
-                    if (path === 'transactions') window.state.transactions = data.sort((a, b) => b.timestamp - a.timestamp);
-                    if (path === 'stores') window.state.stores = data;
-                    window.state.loading = false;
-                    window.render();
-                });
-            });
-        };
+const initDataSync = () => {
+    const productsRef = collection(db, 'products');
+    const transactionsRef = collection(db, 'transactions');
 
+    onSnapshot(productsRef, (snap) => {
+        window.state.products = snap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        }));
+        window.state.loading = false;
+        window.render();
+    });
+
+    onSnapshot(transactionsRef, (snap) => {
+        window.state.transactions = snap.docs.map(d => ({
+            id: d.id,
+            ...d.data()
+        })).sort((a, b) => b.timestamp - a.timestamp);
+
+        window.render();
+    });
+};
         onAuthStateChanged(auth, (user) => {
             window.state.user = user;
             if (user) initDataSync();
