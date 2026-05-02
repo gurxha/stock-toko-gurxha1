@@ -533,6 +533,7 @@ const createProductAuto = async (itemName) => {
 
 // ================== SCAN ==================
 window.captureAndAnalyze = async () => {
+
     const v = document.getElementById('video-preview');
 
     const c = document.createElement('canvas');
@@ -545,64 +546,56 @@ window.captureAndAnalyze = async () => {
     window.render();
 
     try {
-        const { data: { text } } = await Tesseract.recognize(
-            c,
-            'eng',
-            { logger: m => console.log(m) }
-        );
+        const result = await Tesseract.recognize(c, 'eng');
+        const text = result.data.text;
 
         console.log("OCR TEXT:", text);
-
-        // ================= PARSING MANUAL =================
 
         let storeName = "";
         let trackingNumber = "";
         let items = [];
 
         // ambil resi
-        const resiMatch = text.match(/SPXID\d+/);
-        if (resiMatch) trackingNumber = resiMatch[0];
+        const resi = text.match(/SPXID\d+/);
+        if (resi) trackingNumber = resi[0];
 
         // ambil toko
-        const tokoMatch = text.match(/Pengirim[:\s]*(.*)/i);
-        if (tokoMatch) storeName = tokoMatch[1];
+        const toko = text.match(/Pengirim[:\s]*(.*)/i);
+        if (toko) storeName = toko[1];
 
-        // ambil produk
-        // ambil produk
-const productMatch = text.match(/Nama Produk([\s\S]*)/i);
+        // ================= AMBIL PRODUK =================
+        const lines = text.split("\n")
+            .map(l => l.trim())
+            .filter(l => l.length > 5);
 
-if (productMatch) {
-   // ================= AMBIL PRODUK =================
-const lines = text.split("\n")
-    .map(l => l.trim())
-    .filter(l => l.length > 5);
+        for (let line of lines) {
+            const lower = line.toLowerCase();
 
-for (let line of lines) {
-    const lower = line.toLowerCase();
+            if (
+                lower.includes("kg") ||
+                lower.includes("pcs") ||
+                lower.includes("produk") ||
+                lower.includes("makanan")
+            ) {
+                items.push({
+                    productName: line,
+                    variant: "",
+                    quantity: 1
+                });
+                break;
+            }
+        }
 
-    if (
-        lower.includes("kg") ||
-        lower.includes("pcs") ||
-        lower.includes("produk") ||
-        lower.includes("makanan")
-    ) {
-        items.push({
-            productName: line,
-            variant: "",
-            quantity: 1
-        });
-        break;
-    }
-}
+        // 🔥 fallback biar gak kosong
+        if (items.length === 0) {
+            items.push({
+                productName: "Produk dari resi",
+                variant: "",
+                quantity: 1
+            });
+        }
 
-// 🔥 fallback
-if (items.length === 0) {
-    items.push({
-        productName: "Produk dari resi",
-        variant: "",
-        quantity: 1
-    });
-}
+        // simpan ke state
         window.state.scannedItems = items;
 
         document.getElementById('out-storeName').value = storeName;
