@@ -58,7 +58,7 @@
     <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // 🔥 FIREBASE CONFIG
 const firebaseConfig = {
@@ -71,16 +71,15 @@ const firebaseConfig = {
   measurementId: "G-1T7JR4ZHJP"
 };
 
-// 🔥 GEMINI KEY
-const geminiApiKey = "AIzaSyBkOcAIgSD-ATpt_IGAZ6rMBv0yeUsULAI";
+// 🔥 GEMINI API KEY (PUNYA KAMU)
+const geminiApiKey = "AIzaSyAbStZWJJe4IPVM7HnmUc4IjM-FwtjQsKk";
 
 // 🔥 INIT FIREBASE
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-</script>
-// 🔥 FUNCTION SCAN RESI (FIXED)
+// 🔥 FUNCTION SCAN RESI (FIX TOTAL)
 async function scanResi(base64Image) {
   try {
     const response = await fetch(
@@ -91,43 +90,115 @@ async function scanResi(base64Image) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                text: "Ekstrak nama produk, warna, dan jumlah dari resi ini dalam format JSON."
-              },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: base64Image
+          contents: [
+            {
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: "image/jpeg",
+                    data: base64Image
+                  }
+                },
+                {
+                  text: `Baca resi marketplace Indonesia.
+
+WAJIB:
+- Output JSON saja
+- Tanpa penjelasan
+
+Format:
+{
+  "storeName": "",
+  "trackingNumber": "",
+  "items": [
+    {
+      "productName": "",
+      "variant": "",
+      "quantity": 1
+    }
+  ]
+}`
                 }
-              }
-            ]
-          }]
+              ]
+            }
+          ]
         })
       }
     );
 
-    // 🔥 HANDLE ERROR API
     if (!response.ok) {
       const err = await response.text();
       console.error("API ERROR:", err);
-      alert("AI ERROR: " + err);
+      alert("AI ERROR");
       return null;
     }
 
     const result = await response.json();
-
     console.log("AI RESULT:", result);
 
     return result;
 
-  } catch (error) {
-    console.error("SCAN ERROR:", error);
-    alert("AI tidak merespon");
+  } catch (err) {
+    console.error("SCAN ERROR:", err);
+    alert("AI gagal");
     return null;
   }
 }
+
+// 🔥 CAMERA + ANALYZE FIX
+window.captureAndAnalyze = async () => {
+  const v = document.getElementById('video-preview');
+
+  if (!v || v.readyState !== 4) {
+    alert("Kamera belum siap");
+    return;
+  }
+
+  const c = document.createElement('canvas');
+  c.width = v.videoWidth;
+  c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0);
+
+  const base64 = c.toDataURL('image/jpeg', 0.6).split(',')[1];
+
+  const res = await scanResi(base64);
+
+  if (!res) return;
+
+  let text = res.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+  text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    alert("Format AI error");
+    return;
+  }
+
+  window.state.scannedItems = data.items || [];
+
+  document.getElementById('out-storeName').value = data.storeName || '';
+  document.getElementById('out-tracking').value = data.trackingNumber || '';
+
+  window.render();
+};
+
+// 🔥 INIT AUTH
+const initAuth = async () => {
+  await signInAnonymously(auth);
+};
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log("Login OK");
+  }
+});
+
+initAuth();
+
+</script>
         // --- FUNGSI RENDER UTAMA ---
         const render = () => {
             const appDiv = document.getElementById('app');
