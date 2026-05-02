@@ -448,11 +448,11 @@ window.initEdit = (id) => {
 
             try {
                 if (window.state.editData) {
-                    await updateDoc(doc(db,appId, 'public', 'data', 'products', window.state.editData.id), {
-                        name, variant, sku, stock
-                    });
+                   await updateDoc(doc(db,'products', window.state.editData.id), {
+    name, variant, sku, stock
+});
                 } else {
-                    await addDoc(collection(db, appId, 'public', 'data', 'products'), {
+                    await addDoc(collection(db, 'products'), {
                         name, variant, sku, stock, timestamp: Date.now()
                     });
                 }
@@ -467,54 +467,13 @@ window.initEdit = (id) => {
 
         window.deleteProduct = async (id) => {
             if (confirm("Hapus data varian ini selamanya?")) {
-                await deleteDoc(doc(db, appId, 'public', 'data', 'products', id));
+               await deleteDoc(doc(db,'products', id));
             }
         };
 
 
-        // MANUAL MODE NORMAL
-        const pid = document.getElementById(`${prefix}-productId`).value;
-        const qty = Number(document.getElementById(`${prefix}-quantity`).value);
-
-        if (!pid || !qty) return alert("Pilih barang dan jumlah!");
-
-        const prod = window.state.products.find(p => p.id === pid);
-
-        if (type === 'OUT' && prod.stock < qty) {
-            return alert("Stok kurang!");
-        }
-
-        await addDoc(
-            collection(db,appId,'public','data','transactions'),
-            {
-                productId: pid,
-                productName: prod.name,
-                variant: prod.variant,
-                type,
-                quantity: qty,
-                timestamp: Date.now(),
-                storeName: store,
-                trackingNumber: trk
-            }
-        );
-
-        await updateDoc(
-            doc(db,appId,'public','data','products',pid),
-            {
-                stock: type === 'IN'
-                    ? Number(prod.stock) + qty
-                    : Number(prod.stock) - qty
-            }
-        );
-
-        window.closeModal(`modal-${prefix}`);
-
-    } catch (e) {
-        console.error(e);
-        alert("Transaksi gagal");
-    }
-};
-
+        
+        
         // --- SISTEM KAMERA ---
         // ================== AUTO AI SYSTEM ==================
 const normalizeText = (text) => {
@@ -602,14 +561,27 @@ window.captureAndAnalyze = async () => {
                                 }
                             },
                             {
-                                text: `Output JSON dari resi`
-                            }
-                        ]
-                    }]
-                })
-            }
-        );
+                                text: `Baca resi marketplace Indonesia.
 
+Ambil:
+- nama produk
+- jumlah (qty)
+- nama toko
+- nomor resi
+
+OUTPUT HARUS JSON:
+
+{
+  "storeName": "",
+  "trackingNumber": "",
+  "items": [
+    {
+      "productName": "",
+      "variant": "",
+      "quantity": 1
+    }
+  ]
+}`
         const res = await response.json();
 
         let text = res.candidates?.[0]?.content?.parts?.[0]?.text || "";
@@ -703,25 +675,23 @@ window.handleTransaction = async (type) => {
        
 
         const initDataSync = () => {
-            const paths = ['products', 'transactions', 'stores'];
-            paths.forEach(path => {
-                const colRef = collection(db, appId, 'public', 'data', path);
-                onSnapshot(colRef, (snap) => {
-                    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    if (path === 'products') window.state.products = data;
-                    if (path === 'transactions') window.state.transactions = data.sort((a, b) => b.timestamp - a.timestamp);
-                    if (path === 'stores') window.state.stores = data;
-                    window.state.loading = false;
-                    window.render();
-                });
-            });
-        };
+    const paths = ['products', 'transactions', 'stores'];
 
-        onAuthStateChanged(auth, (user) => {
-            window.state.user = user;
-            if (user) initDataSync();
+    paths.forEach(path => {
+        const colRef = collection(db, path);
+
+        onSnapshot(colRef, (snap) => {
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            if (path === 'products') window.state.products = data;
+            if (path === 'transactions') window.state.transactions = data.sort((a, b) => b.timestamp - a.timestamp);
+            if (path === 'stores') window.state.stores = data;
+
+            window.state.loading = false;
+            window.render();
         });
-
+    });
+};
         initAuth();
         window.render = render;
     </script>
