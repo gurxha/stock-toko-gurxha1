@@ -572,14 +572,12 @@ window.captureAndAnalyze = async () => {
 const productMatch = text.match(/Nama Produk([\s\S]*)/i);
 
 if (productMatch) {
-   // ================= AMBIL PRODUK LEBIH KUAT =================
+   // ================= AMBIL PRODUK =================
 const lines = text.split("\n")
     .map(l => l.trim())
     .filter(l => l.length > 5);
 
-// cari baris yang kemungkinan produk
 for (let line of lines) {
-
     const lower = line.toLowerCase();
 
     if (
@@ -596,7 +594,9 @@ for (let line of lines) {
         break;
     }
 }
-    if (items.length === 0) {
+
+// 🔥 fallback
+if (items.length === 0) {
     items.push({
         productName: "Produk dari resi",
         variant: "",
