@@ -61,18 +61,20 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gsta
 import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // 🔥 FIREBASE CONFIG
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyB2yBDHSLQ79chDudLRonTjIAKOVldtzsw",
+  apiKey: "AIzaSyAlXIlhX7JsnZL7vCeuhKr2ws2-UqgvnW8",
   authDomain: "gurxha-stock.firebaseapp.com",
   projectId: "gurxha-stock",
-  storageBucket: "gurxha-stock.firebasestorage.app",
+  storageBucket: "gurxha-stock.appspot.com",
   messagingSenderId: "64309943373",
   appId: "1:64309943373:web:75d20c74460ba69ba5d004",
   measurementId: "G-1T7JR4ZHJP"
 };
 
+const appId = "gurxha-stock";
 // 🔥 GEMINI API KEY (PUNYA KAMU)
-const geminiApiKey = "AIzaSyAbStZWJJe4IPVM7HnmUc4IjM-FwtjQsKk";
+const geminiApiKey = "AIzaSyBkOcAIgSD-ATpt_IGAZ6rMBv0yeUsULAI";
 
 // 🔥 INIT FIREBASE
 const app = initializeApp(firebaseConfig);
