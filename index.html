@@ -59,6 +59,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- KONFIGURASI DATABASE ---
         // Variabel __firebase_config disediakan oleh lingkungan runtime
@@ -591,37 +592,35 @@ OUTPUT HARUS JSON:
             }
         );
 
-        const res = await response.json();
+        window.handleTransaction = async () => {
+    const store = document.getElementById('out-storeName').value || 'Umum';
+    const trk = document.getElementById('out-tracking').value || '';
 
-        let text = res.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    try {
+        for (const item of window.state.scannedItems) {
 
-        text = text
-            .replace(/```json/g, "")
-            .replace(/```/g, "")
-            .trim();
+            await addDoc(collection(db,'transactions'), {
+                productId: item.productId,
+                productName: item.productName,
+                variant: item.variant,
+                type: "OUT",
+                quantity: item.quantity,
+                timestamp: Date.now(),
+                storeName: store,
+                trackingNumber: trk
+            });
 
-        let data;
-
-        try {
-            data = JSON.parse(text);
-        } catch (err) {
-            console.log("AI ERROR TEXT:", text);
-            throw new Error("Format AI tidak valid");
+            await updateDoc(doc(db,'products',item.productId), {
+                stock: increment(-item.quantity)
+            });
         }
 
-        window.state.scannedItems = data.items || [];
-
-        document.getElementById('out-storeName').value = data.storeName || '';
-        document.getElementById('out-tracking').value = data.trackingNumber || '';
-
-        window.render();
+        alert("✅ Semua otomatis berhasil");
+        window.closeModal('modal-out');
 
     } catch (e) {
         console.error(e);
-        alert("❌ AI gagal membaca resi");
-    } finally {
-        window.state.isAnalyzing = false;
-        window.render();
+        alert("❌ Gagal proses");
     }
 };
 
