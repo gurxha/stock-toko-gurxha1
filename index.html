@@ -675,7 +675,7 @@ const qty = qtyEl ? Number(qtyEl.value) : 0;
         }
 
         await addDoc(
-            collection(db,'artifacts',appId,'public','data','transactions'),
+            collection(db,'transactions')
             {
                 productId: pid,
                 productName: prod.name,
@@ -689,7 +689,7 @@ const qty = qtyEl ? Number(qtyEl.value) : 0;
         );
 
         await updateDoc(
-            doc(db,'artifacts',appId,'public','data','products',pid),
+            doc(db,'products',...)
             {
                 stock: type === 'IN'
                     ? Number(prod.stock) + qty
