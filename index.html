@@ -553,17 +553,16 @@ window.captureAndAnalyze = async () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                {
-                                    inlineData: {
-                                        mimeType: "image/jpeg",
-                                        data: base64
-                                    }
-                                },
-                                {
-                                    text: `Baca resi marketplace Indonesia.
+                    contents: [{
+                        parts: [
+                            {
+                                inlineData: {
+                                    mimeType: "image/jpeg",
+                                    data: base64
+                                }
+                            },
+                            {
+                                text: `Baca resi marketplace Indonesia.
 
 Ambil:
 - nama produk
@@ -584,43 +583,41 @@ OUTPUT HARUS JSON:
     }
   ]
 }`
-                                }
-                            ]
-                        }
-                    ]
+                            }
+                        ]
+                    }]
                 })
             }
         );
 
-        window.handleTransaction = async () => {
-    const store = document.getElementById('out-storeName').value || 'Umum';
-    const trk = document.getElementById('out-tracking').value || '';
+        const res = await response.json();
 
-    try {
-        for (const item of window.state.scannedItems) {
+        if (res.error) throw new Error(res.error.message);
+        if (!res.candidates || res.candidates.length === 0) throw new Error("AI tidak membaca");
 
-            await addDoc(collection(db,'transactions'), {
-                productId: item.productId,
-                productName: item.productName,
-                variant: item.variant,
-                type: "OUT",
-                quantity: item.quantity,
-                timestamp: Date.now(),
-                storeName: store,
-                trackingNumber: trk
-            });
+        let text = res.candidates[0]?.content?.parts?.[0]?.text || "";
 
-            await updateDoc(doc(db,'products',item.productId), {
-                stock: increment(-item.quantity)
-            });
-        }
+        text = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        alert("✅ Semua otomatis berhasil");
-        window.closeModal('modal-out');
+        const match = text.match(/\{[\s\S]*\}/);
+
+        if (!match) throw new Error("Format JSON tidak ditemukan");
+
+        const data = JSON.parse(match[0]);
+
+        window.state.scannedItems = data.items || [];
+
+        document.getElementById('out-storeName').value = data.storeName || '';
+        document.getElementById('out-tracking').value = data.trackingNumber || '';
+
+        window.render();
 
     } catch (e) {
         console.error(e);
-        alert("❌ Gagal proses");
+        alert("❌ AI gagal membaca resi");
+    } finally {
+        window.state.isAnalyzing = false;
+        window.render();
     }
 };
 
@@ -654,7 +651,7 @@ window.handleTransaction = async (type) => {
             });
 
             await updateDoc(doc(db, 'products', product.id), {
-                stock: Number(product.stock) - Number(item.quantity)
+                stock: increment(-item.quantity)
             });
         }
 
