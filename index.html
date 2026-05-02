@@ -582,12 +582,26 @@ OUTPUT HARUS JSON:
     }
   ]
 }`
+                            }
+                        ]
+                    }]
+                })
+            }
+        );
+
         const res = await response.json();
 
         let text = res.candidates?.[0]?.content?.parts?.[0]?.text || "";
         text = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        const data = JSON.parse(text);
+        let data;
+
+        try {
+            data = JSON.parse(text);
+        } catch {
+            console.log("AI TEXT:", text);
+            throw new Error("Format AI salah");
+        }
 
         window.state.scannedItems = data.items || [];
 
@@ -597,13 +611,13 @@ OUTPUT HARUS JSON:
         window.render();
 
     } catch (e) {
-        alert("AI gagal membaca resi");
+        console.error(e);
+        alert("❌ AI gagal membaca resi");
     } finally {
         window.state.isAnalyzing = false;
         window.render();
     }
 };
-
 
 // ================== TRANSAKSI ==================
 window.handleTransaction = async (type) => {
