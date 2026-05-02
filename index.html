@@ -448,11 +448,11 @@ window.initEdit = (id) => {
 
             try {
                 if (window.state.editData) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', window.state.editData.id), {
+                    await updateDoc(doc(db,appId, 'public', 'data', 'products', window.state.editData.id), {
                         name, variant, sku, stock
                     });
                 } else {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), {
+                    await addDoc(collection(db, appId, 'public', 'data', 'products'), {
                         name, variant, sku, stock, timestamp: Date.now()
                     });
                 }
@@ -467,92 +467,10 @@ window.initEdit = (id) => {
 
         window.deleteProduct = async (id) => {
             if (confirm("Hapus data varian ini selamanya?")) {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
+                await deleteDoc(doc(db, appId, 'public', 'data', 'products', id));
             }
         };
-window.handleTransaction = async (type) => {
-    const prefix = type === 'IN' ? 'in' : 'out';
-    const store = document.getElementById(`${prefix}-storeName`).value || 'Umum';
-    const trk = document.getElementById(`${prefix}-tracking`)?.value || '';
 
-    try {
-
-        // MULTI ITEM DARI SCAN RESI
-        if(type === "OUT" && window.state.scannedItems?.length > 0){
-
-            for(const item of window.state.scannedItems){
-
-                const normalizeText = (text) => {
-    const stopWords = [
-        "rajawali",
-        "r&w",
-        "bahan",
-        "kue",
-        "brownies",
-        "premium",
-        "murah",
-        "original",
-        "best seller",
-        "shopee",
-        "tokopedia",
-        "tiktok"
-    ];
-
-    let clean = text.toLowerCase();
-
-    stopWords.forEach(word => {
-        clean = clean.replaceAll(word, "");
-    });
-
-    return clean
-        .replace(/[^\w\s]/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-};
-
-const product = window.state.products.find(p => {
-    const aiName = normalizeText(item.productName);
-    const appName = normalizeText(p.name);
-
-    return aiName.includes(appName) || appName.includes(aiName);
-});
-                
-
-                if(product){
-
-                    if(product.stock < item.quantity){
-                        alert(`Stok ${product.name} ${product.variant} kurang`);
-                        continue;
-                    }
-
-                    await addDoc(
-                        collection(db,'artifacts',appId,'public','data','transactions'),
-                        {
-                            productId: product.id,
-                            productName: product.name,
-                            variant: product.variant,
-                            type: "OUT",
-                            quantity: item.quantity,
-                            timestamp: Date.now(),
-                            storeName: store,
-                            trackingNumber: trk
-                        }
-                    );
-
-                    await updateDoc(
-                        doc(db,'artifacts',appId,'public','data','products',product.id),
-                        {
-                            stock: Number(product.stock) - Number(item.quantity)
-                        }
-                    );
-                }
-            }
-
-            alert("Semua item resi berhasil diproses");
-            window.state.scannedItems = [];
-            window.closeModal('modal-out');
-            return;
-        }
 
         // MANUAL MODE NORMAL
         const pid = document.getElementById(`${prefix}-productId`).value;
@@ -567,7 +485,7 @@ const product = window.state.products.find(p => {
         }
 
         await addDoc(
-            collection(db,'artifacts',appId,'public','data','transactions'),
+            collection(db,appId,'public','data','transactions'),
             {
                 productId: pid,
                 productName: prod.name,
@@ -581,7 +499,7 @@ const product = window.state.products.find(p => {
         );
 
         await updateDoc(
-            doc(db,'artifacts',appId,'public','data','products',pid),
+            doc(db,appId,'public','data','products',pid),
             {
                 stock: type === 'IN'
                     ? Number(prod.stock) + qty
@@ -598,6 +516,160 @@ const product = window.state.products.find(p => {
 };
 
         // --- SISTEM KAMERA ---
+        // ================== AUTO AI SYSTEM ==================
+const normalizeText = (text) => {
+    return (text || "")
+        .toLowerCase()
+        .replace(/[^\w\s]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+};
+
+const findBestMatch = (aiName, products) => {
+    const target = normalizeText(aiName);
+
+    let best = null;
+    let score = 0;
+
+    for (const p of products) {
+        const name = normalizeText(p.name);
+
+        let match = 0;
+
+        if (target.includes(name)) match += 2;
+        if (name.includes(target)) match += 2;
+
+        const words = target.split(" ");
+        for (const w of words) {
+            if (name.includes(w)) match += 1;
+        }
+
+        if (match > score) {
+            score = match;
+            best = p;
+        }
+    }
+
+    return score >= 2 ? best : null;
+};
+
+const createProductAuto = async (itemName) => {
+    const docRef = await addDoc(collection(db, 'products'), {
+        name: itemName,
+        variant: '',
+        sku: '',
+        stock: 0,
+        timestamp: Date.now()
+    });
+
+    return {
+        id: docRef.id,
+        name: itemName,
+        variant: '',
+        stock: 0
+    };
+};
+
+
+// ================== SCAN ==================
+window.captureAndAnalyze = async () => {
+    const v = document.getElementById('video-preview');
+
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth;
+    c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0);
+
+    const base64 = c.toDataURL('image/jpeg', 0.7).split(',')[1];
+
+    window.stopCamera();
+    window.state.isAnalyzing = true;
+    window.render();
+
+    try {
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            {
+                                inlineData: {
+                                    mimeType: "image/jpeg",
+                                    data: base64
+                                }
+                            },
+                            {
+                                text: `Output JSON dari resi`
+                            }
+                        ]
+                    }]
+                })
+            }
+        );
+
+        const res = await response.json();
+
+        let text = res.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
+        const data = JSON.parse(text);
+
+        window.state.scannedItems = data.items || [];
+
+        document.getElementById('out-storeName').value = data.storeName || '';
+        document.getElementById('out-tracking').value = data.trackingNumber || '';
+
+        window.render();
+
+    } catch (e) {
+        alert("AI gagal membaca resi");
+    } finally {
+        window.state.isAnalyzing = false;
+        window.render();
+    }
+};
+
+
+// ================== TRANSAKSI ==================
+window.handleTransaction = async (type) => {
+    const store = document.getElementById('out-storeName').value || 'Umum';
+    const trk = document.getElementById('out-tracking').value || '';
+
+    try {
+        for(const item of window.state.scannedItems){
+
+            let product = findBestMatch(item.productName, window.state.products);
+
+            if (!product) {
+                product = await createProductAuto(item.productName);
+            }
+
+            await addDoc(collection(db,'transactions'), {
+                productId: product.id,
+                productName: product.name,
+                variant: product.variant,
+                type: "OUT",
+                quantity: item.quantity,
+                timestamp: Date.now(),
+                storeName: store,
+                trackingNumber: trk
+            });
+
+            await updateDoc(doc(db,'products',product.id), {
+                stock: Number(product.stock) - Number(item.quantity)
+            });
+        }
+
+        alert("Berhasil");
+        window.closeModal('modal-out');
+
+    } catch (e) {
+        alert("Gagal");
+    }
+};
         let streamRef = null;
         window.startCamera = async () => {
             window.state.isScanning = true;
@@ -622,80 +694,7 @@ const product = window.state.products.find(p => {
             window.render();
         };
 
-        window.captureAndAnalyze = async () => {
-            const v = document.getElementById('video-preview');
-            const c = document.createElement('canvas');
-            c.width = v.videoWidth;
-            c.height = v.videoHeight;
-            c.getContext('2d').drawImage(v, 0, 0);
-            const base64 = c.toDataURL('image/jpeg', 0.8).split(',')[1];
-            window.stopCamera();
-            window.state.isAnalyzing = true;
-            window.render();
-            
-            try {
-const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-    {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            contents: [
-                {
-                    parts: [
-                        {
-                            text: `Ekstrak JSON dari resi/order menjadi format:
-{
-  "storeName": "",
-  "trackingNumber": "",
-  "items": [
-    {
-      "productName": "",
-      "variant": "",
-      "quantity": 0
-    }
-  ]
-}
-
-Jika ada banyak varian dalam satu resi, masukkan semuanya ke dalam array items.`
-                        },
-                        {
-                            inlineData: {
-                                mimeType: "image/jpeg",
-                                data: base64
-                            }
-                        }
-                    ]
-                }
-            ],
-            generationConfig: {
-                responseMimeType: "application/json"
-            }
-        })
-    }
-);
-
-const res = await response.json();
-const dataText = res.candidates[0].content.parts[0].text;
-const data = JSON.parse(dataText);
-            
-                
-                document.getElementById('out-storeName').value = data.storeName || '';
-document.getElementById('out-tracking').value = data.trackingNumber || '';
-
-window.state.scannedItems = data.items || [];
-window.render();
-                
-        
-            } catch (e) {
-                alert("AI gagal membaca resi.");
-            } finally {
-                window.state.isAnalyzing = false;
-                window.render();
-            }
-        };
+ 
 
         // --- SISTEM AWAL ---
        const initAuth = async () => {
@@ -706,7 +705,7 @@ window.render();
         const initDataSync = () => {
             const paths = ['products', 'transactions', 'stores'];
             paths.forEach(path => {
-                const colRef = collection(db, 'artifacts', appId, 'public', 'data', path);
+                const colRef = collection(db, appId, 'public', 'data', path);
                 onSnapshot(colRef, (snap) => {
                     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     if (path === 'products') window.state.products = data;
