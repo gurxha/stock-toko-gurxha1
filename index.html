@@ -303,6 +303,7 @@ const geminiApiKey = "AIzaSyBkOcAIgSD-ATpt_IGAZ6rMBv0yeUsULAI";
                                     <div class="flex gap-2">
                                         <button onclick="window.stopCamera()" class="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[10px]">Tutup</button>
                                         <button onclick="window.captureAndAnalyze()" class="flex-[2] py-4 bg-orange-500 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg">Ambil & Scan AI</button>
+                                        <input type="file" accept="image/*" capture="environment" id="upload-resi" class="w-full mt-3 p-3 border rounded-xl">
                                     </div>
                                 </div>` : `
                                 <button onclick="window.startCamera()" class="w-full py-8 bg-orange-50 border-2 border-dashed border-orange-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 text-orange-600 active:scale-95">
